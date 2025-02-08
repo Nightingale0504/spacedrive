@@ -12,6 +12,7 @@ import {
 	PaintBrush,
 	PuzzlePiece,
 	Receipt,
+	ShareNetwork,
 	ShieldCheck,
 	TagSimple,
 	User
@@ -27,7 +28,7 @@ import SidebarLink from '../Layout/Sidebar/SidebarLayout/Link';
 import { useLayoutStore } from '../Layout/store';
 import { NavigationButtons } from '../TopBar/NavigationButtons';
 
-const Heading = tw.div`mb-1 ml-1 text-xs font-semibold text-gray-400`;
+const Heading = tw.div`mb-1 ml-1 text-xs font-semibold text-gray-400 font-plex tracking-wide`;
 const Section = tw.div`space-y-0.5`;
 
 export default () => {
@@ -37,7 +38,7 @@ export default () => {
 
 	// const isPairingEnabled = useFeatureFlag('p2pPairing');
 	const isBackupsEnabled = useFeatureFlag('backups');
-	const cloudSync = useFeatureFlag('cloudSync');
+	// const cloudSync = useFeatureFlag('cloudSync');
 
 	const { t } = useLocale();
 
@@ -64,14 +65,11 @@ export default () => {
 						<Icon component={GearSix} />
 						{t('general')}
 					</SidebarLink>
-					{/* <SidebarLink to="client/usage">
-						<Icon component={ChartBar} />
-						{t('usage')}
-					</SidebarLink> */}
-					<SidebarLink to="client/account">
+					{/* Disabling for now until sync is ready. */}
+					{/* <SidebarLink to="client/account">
 						<Icon component={User} />
 						{t('account')}
-					</SidebarLink>
+					</SidebarLink> */}
 					<SidebarLink to="node/libraries">
 						<Icon component={Books} />
 						{t('libraries')}
@@ -107,10 +105,14 @@ export default () => {
 						<Icon component={GearSix} />
 						{t('general')}
 					</SidebarLink>
-					{/* <SidebarLink to="library/nodes" disabled={!isPairingEnabled}>
+					<SidebarLink to="library/volumes">
 						<Icon component={ShareNetwork} />
-						Nodes
-					</SidebarLink> */}
+						Volumes
+					</SidebarLink>
+					<SidebarLink to="library/sync">
+						<Icon component={ArrowsClockwise} />
+						{t('sync')}
+					</SidebarLink>
 					<SidebarLink to="library/locations">
 						<Icon component={HardDrive} />
 						{t('locations')}
@@ -123,12 +125,7 @@ export default () => {
 						<Icon component={MagnifyingGlass} />
 						Saved Searches
 					</SidebarLink> */}
-					{cloudSync && (
-						<SidebarLink to="library/sync">
-							<Icon component={ArrowsClockwise} />
-							{t('sync')}
-						</SidebarLink>
-					)}
+
 					<SidebarLink disabled to="library/clouds">
 						<Icon component={Cloud} />
 						{t('clouds')}

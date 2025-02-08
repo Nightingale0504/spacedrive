@@ -1,9 +1,11 @@
+import { Transparent } from '@sd/assets/images';
 import clsx from 'clsx';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import {
 	getItemFilePath,
 	getItemObject,
 	humanizeSize,
+	libraryClient,
 	Tag,
 	useExplorerLayoutStore,
 	useLibraryQuery,
@@ -11,6 +13,7 @@ import {
 	type ExplorerItem
 } from '@sd/client';
 import { useLocale } from '~/hooks';
+import { usePlatform } from '~/util/Platform';
 
 import { useExplorerContext } from '../../../Context';
 import { ExplorerDraggable } from '../../../ExplorerDraggable';
@@ -19,6 +22,7 @@ import { FileThumb } from '../../../FilePath/Thumb';
 import { useFrame } from '../../../FilePath/useFrame';
 import { explorerStore } from '../../../store';
 import { useExplorerDraggable } from '../../../useExplorerDraggable';
+import { useExplorerItemData } from '../../../useExplorerItemData';
 import { RenamableItemText } from '../../RenamableItemText';
 import { ViewItem } from '../../ViewItem';
 import { GridViewItemContext, useGridViewItemContext } from './Context';
@@ -52,9 +56,10 @@ export const GridViewItem = memo((props: GridViewItemProps) => {
 	);
 });
 
-const InnerDroppable = () => {
+const InnerDroppable = memo(() => {
 	const item = useGridViewItemContext();
 	const { isDroppable } = useExplorerDroppableContext();
+
 	return (
 		<>
 			<div
@@ -63,45 +68,46 @@ const InnerDroppable = () => {
 					(item.selected || isDroppable) && 'bg-app-selectedItem'
 				)}
 			>
-				<ItemFileThumb />
+				<ItemFileThumb {...item} />
 			</div>
 			<ItemMetadata />
 		</>
 	);
-};
+});
 
-const ItemFileThumb = () => {
+const ItemFileThumb = memo((props: GridViewItemProps) => {
 	const frame = useFrame();
-
-	const item = useGridViewItemContext();
-	const isLabel = item.data.type === 'Label';
-
 	const { attributes, listeners, style, setDraggableRef } = useExplorerDraggable({
-		data: item.data
+		data: props.data
 	});
+
+	const isLabel = props.data.type === 'Label';
 
 	return (
 		<FileThumb
-			data={item.data}
+			data={props.data}
 			frame={!isLabel}
 			cover={isLabel}
 			blackBars
 			extension
 			className={clsx(
 				isLabel ? [frame.className, '!size-[90%] !rounded-md'] : 'px-2 py-1',
-				item.cut && 'opacity-60'
+				props.cut && 'opacity-60'
 			)}
 			ref={setDraggableRef}
-			childProps={{
-				style,
-				...attributes,
-				...listeners
-			}}
+			childProps={useMemo(
+				() => ({
+					style,
+					...attributes,
+					...listeners
+				}),
+				[style, attributes, listeners]
+			)}
 		/>
 	);
-};
+});
 
-const ItemMetadata = () => {
+const ItemMetadata = memo(() => {
 	const item = useGridViewItemContext();
 	const { isDroppable } = useExplorerDroppableContext();
 	const explorerLayout = useExplorerLayoutStore();
@@ -123,9 +129,9 @@ const ItemMetadata = () => {
 			{item.data.type === 'Label' && <LabelItemCount data={item.data} />}
 		</ExplorerDraggable>
 	);
-};
+});
 
-const ItemTags = () => {
+const ItemTags = memo(() => {
 	const item = useGridViewItemContext();
 	const object = getItemObject(item.data);
 	const filePath = getItemFilePath(item.data);
@@ -150,9 +156,9 @@ const ItemTags = () => {
 			))}
 		</div>
 	);
-};
+});
 
-const ItemSize = () => {
+const ItemSize = memo(() => {
 	const item = useGridViewItemContext();
 	const { showBytesInGridView } = useExplorerContext().useSettingsSnapshot();
 	const isRenaming = useSelector(explorerStore, (s) => s.isRenaming);
@@ -186,9 +192,9 @@ const ItemSize = () => {
 			{`${bytes}`}
 		</div>
 	);
-};
+});
 
-function LabelItemCount({ data }: { data: Extract<ExplorerItem, { type: 'Label' }> }) {
+const LabelItemCount = memo(({ data }: { data: Extract<ExplorerItem, { type: 'Label' }> }) => {
 	const { t } = useLocale();
 
 	const count = useLibraryQuery([
@@ -202,11 +208,11 @@ function LabelItemCount({ data }: { data: Extract<ExplorerItem, { type: 'Label' 
 		}
 	]);
 
-	if (count.data === undefined) return;
+	if (count.data === undefined) return null;
 
 	return (
 		<div className="truncate rounded-md px-1.5 py-px text-center text-tiny text-ink-dull">
 			{t('item_with_count', { count: count.data })}
 		</div>
 	);
-}
+});

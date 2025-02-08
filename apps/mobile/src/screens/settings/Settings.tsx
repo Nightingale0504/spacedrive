@@ -12,15 +12,17 @@ import {
 	PuzzlePiece,
 	ShareNetwork,
 	ShieldCheck,
-	TagSimple
+	TagSimple,
+	UserCircle
 } from 'phosphor-react-native';
-import React from 'react';
 import { Platform, SectionList, Text, TouchableWithoutFeedback, View } from 'react-native';
-import { DebugState, useDebugState, useDebugStateEnabler } from '@sd/client';
+import { DebugState, useDebugState, useDebugStateEnabler, useLibraryQuery } from '@sd/client';
 import ScreenContainer from '~/components/layout/ScreenContainer';
 import { SettingsItem } from '~/components/settings/SettingsItem';
+import { useEnableDrawer } from '~/hooks/useEnableDrawer';
 import { tw, twStyle } from '~/lib/tailwind';
 import { SettingsStackParamList, SettingsStackScreenProps } from '~/navigation/tabs/SettingsStack';
+import { useUserStore } from '~/stores/userStore';
 
 type SectionType = {
 	title: string;
@@ -28,11 +30,15 @@ type SectionType = {
 		title: string;
 		icon: Icon;
 		navigateTo: keyof SettingsStackParamList;
+		comingSoon?: boolean;
 		rounded?: 'top' | 'bottom';
 	}[];
 };
 
-const sections: (debugState: DebugState) => SectionType[] = (debugState) => [
+const sections: (
+	debugState: DebugState,
+	userInfo: ReturnType<typeof useUserStore>['userInfo']
+) => SectionType[] = (debugState, userInfo) => [
 	{
 		title: 'Client',
 		data: [
@@ -42,6 +48,21 @@ const sections: (debugState: DebugState) => SectionType[] = (debugState) => [
 				title: 'General',
 				rounded: 'top'
 			},
+			...(userInfo
+				? ([
+						{
+							icon: UserCircle,
+							navigateTo: 'AccountProfile',
+							title: 'Account'
+						}
+					] as const)
+				: ([
+						{
+							icon: UserCircle,
+							navigateTo: 'AccountLogin',
+							title: 'Account'
+						}
+					] as const)),
 			{
 				icon: Books,
 				navigateTo: 'LibrarySettings',
@@ -49,19 +70,22 @@ const sections: (debugState: DebugState) => SectionType[] = (debugState) => [
 			},
 			{
 				icon: PaintBrush,
+				comingSoon: true,
 				navigateTo: 'AppearanceSettings',
 				title: 'Appearance'
 			},
 			{
 				icon: ShieldCheck,
 				navigateTo: 'PrivacySettings',
+				comingSoon: true,
 				title: 'Privacy'
 			},
 			{
 				icon: PuzzlePiece,
 				navigateTo: 'ExtensionsSettings',
 				title: 'Extensions',
-				rounded: 'bottom'
+				rounded: 'bottom',
+				comingSoon: true
 			}
 		]
 	},
@@ -82,6 +106,7 @@ const sections: (debugState: DebugState) => SectionType[] = (debugState) => [
 			{
 				icon: ShareNetwork,
 				navigateTo: 'NodesSettings',
+				comingSoon: true,
 				title: 'Nodes'
 			},
 			{
@@ -151,14 +176,21 @@ function renderSectionHeader({ section }: { section: { title: string } }) {
 
 export default function SettingsScreen({ navigation }: SettingsStackScreenProps<'Settings'>) {
 	const debugState = useDebugState();
+	const syncEnabled = useLibraryQuery(['sync.enabled']);
+	const userInfo = useUserStore().userInfo;
+
+	// Enables the drawer from react-navigation
+	useEnableDrawer();
 
 	return (
 		<ScreenContainer tabHeight={false} style={tw`gap-0 px-5 py-0`}>
 			<SectionList
 				contentContainerStyle={tw`py-6`}
-				sections={sections(debugState)}
+				sections={sections(debugState, userInfo)}
 				renderItem={({ item }) => (
 					<SettingsItem
+						syncEnabled={syncEnabled.data}
+						comingSoon={item.comingSoon}
 						title={item.title}
 						leftIcon={item.icon}
 						onPress={() => navigation.navigate(item.navigateTo as any)}

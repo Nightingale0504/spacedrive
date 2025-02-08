@@ -1,8 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import { FlashList } from '@shopify/flash-list';
-import { UseInfiniteQueryResult } from '@tanstack/react-query';
+import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import { ActivityIndicator, Pressable } from 'react-native';
+import React, { useRef } from 'react';
+import { ActivityIndicator, NativeModules, Platform } from 'react-native';
 import FileViewer from 'react-native-file-viewer';
 import {
 	getIndexedItemFilePath,
@@ -17,19 +18,23 @@ import { BrowseStackScreenProps } from '~/navigation/tabs/BrowseStack';
 import { useExplorerStore } from '~/stores/explorerStore';
 import { useActionsModalStore } from '~/stores/modalStore';
 
+import { ModalRef } from '../layout/Modal';
 import ScreenContainer from '../layout/ScreenContainer';
+import RenameModal from '../modal/inspector/RenameModal';
 import { toast } from '../primitive/Toast';
 import FileItem from './FileItem';
 import FileMedia from './FileMedia';
 import FileRow from './FileRow';
 import Menu from './menu/Menu';
 
+const { NativeFunctions } = NativeModules;
+
 type ExplorerProps = {
 	tabHeight?: boolean;
 	items: ExplorerItem[] | null;
 	/** Function to fetch next page of items. */
 	loadMore: () => void;
-	query: UseInfiniteQueryResult<SearchData<ExplorerItem>>;
+	query: UseInfiniteQueryResult<InfiniteData<SearchData<ExplorerItem>>>;
 	count?: number;
 	empty?: never;
 	isEmpty?: never;
@@ -47,23 +52,41 @@ const Explorer = (props: Props) => {
 	const navigation = useNavigation<BrowseStackScreenProps<'Location'>['navigation']>();
 	const store = useExplorerStore();
 	const { modalRef, setData } = useActionsModalStore();
+	const renameRef = useRef<ModalRef>(null);
 
 	//Open file with native api
 	async function handleOpen(data: ExplorerItem) {
-		try {
-			const filePath = getIndexedItemFilePath(data);
+		const filePath = getIndexedItemFilePath(data);
+		if (Platform.OS === 'android') {
+			try {
+				const absolutePath = await libraryClient.query([
+					'files.getPath',
+					filePath?.id ?? -1
+				]);
+				if (!absolutePath) return;
+				await FileViewer.open(absolutePath, {
+					// Android only
+					showAppsSuggestions: false, // If there is not an installed app that can open the file, open the Play Store with suggested apps
+					showOpenWithDialog: true // if there is more than one app that can open the file, show an Open With dialogue box
+				});
+				if (filePath && filePath.object_id)
+					await libraryClient.mutation(['files.updateAccessTime', [filePath.object_id]]);
+			} catch (error) {
+				console.error('Error opening object', error);
+				toast.error('Error opening object');
+			}
+		} else {
+			// iOS
 			const absolutePath = await libraryClient.query(['files.getPath', filePath?.id ?? -1]);
 			if (!absolutePath) return;
-			await FileViewer.open(absolutePath, {
-				// Android only
-				showAppsSuggestions: false, // If there is not an installed app that can open the file, open the Play Store with suggested apps
-				showOpenWithDialog: true // if there is more than one app that can open the file, show an Open With dialogue box
-			});
-			filePath &&
-				filePath.object_id &&
-				(await libraryClient.mutation(['files.updateAccessTime', [filePath.object_id]]));
-		} catch (error) {
-			toast.error('Error opening object');
+			if (!filePath?.location_id) return;
+			try {
+				// These arguments cannot be null due to compatability with Android (React Native throws an error if even the type is nullable)
+				await NativeFunctions.previewFile(absolutePath!, filePath!.location_id!);
+			} catch (error) {
+				console.error('Error previewing file:', error);
+				toast.error('Error previewing file');
+			}
 		}
 	}
 
@@ -89,9 +112,15 @@ const Explorer = (props: Props) => {
 		modalRef.current?.present();
 	}
 
+	function renameHandler(data: ExplorerItem) {
+		setData(data);
+		renameRef.current?.present();
+	}
+
 	return (
 		<ScreenContainer tabHeight={props.tabHeight} scrollview={false} style={'gap-0 py-0'}>
 			<Menu />
+			<RenameModal ref={renameRef} />
 			{/* Flashlist not supporting empty centering: https://github.com/Shopify/flash-list/discussions/517
 			So needs to be done this way */}
 			{/* Items */}
@@ -115,22 +144,33 @@ const Explorer = (props: Props) => {
 								? item.item.name
 								: item.item.id.toString()
 					}
-					renderItem={({ item }) => (
-						<Pressable
-							onPress={() => handlePress(item)}
-							onLongPress={() => handleLongPress(item)}
-						>
-							{store.layoutMode === 'grid' ? (
-								<FileItem data={item} />
-							) : store.layoutMode === 'list' ? (
-								<FileRow data={item} />
-							) : (
-								store.layoutMode === 'media' && <FileMedia data={item} />
-							)}
-						</Pressable>
-					)}
+					renderItem={({ item }) => {
+						const commonProps = {
+							onPress: () => handlePress(item),
+							onLongPress: () => handleLongPress(item),
+							data: item
+						};
+						return (
+							<>
+								{store.layoutMode === 'grid' ? (
+									<FileItem
+										{...commonProps}
+										renameHandler={() => renameHandler(item)}
+									/>
+								) : store.layoutMode === 'list' ? (
+									<FileRow
+										{...commonProps}
+										renameHandler={() => renameHandler(item)}
+									/>
+								) : (
+									store.layoutMode === 'media' && <FileMedia {...commonProps} />
+								)}
+							</>
+						);
+					}}
 					contentContainerStyle={twStyle(
-						store.layoutMode !== 'media' ? 'px-2 py-5' : 'px-0'
+						store.layoutMode !== 'media' ? 'px-2 pt-5' : 'px-0',
+						store.layoutMode === 'grid' && 'pt-9'
 					)}
 					extraData={store.layoutMode}
 					estimatedItemSize={
@@ -142,6 +182,7 @@ const Explorer = (props: Props) => {
 									? Layout.window.width / store.mediaColumns
 									: 100
 					}
+					// ItemSeparatorComponent={() => <View style={tw`p-10`}/>}
 					onEndReached={() => props.loadMore?.()}
 					onEndReachedThreshold={0.6}
 					ListFooterComponent={

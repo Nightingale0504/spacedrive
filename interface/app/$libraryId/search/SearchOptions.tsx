@@ -1,7 +1,9 @@
 import { FunnelSimple, Icon, Plus } from '@phosphor-icons/react';
 import { IconTypes } from '@sd/assets/util';
 import clsx from 'clsx';
+import { use } from 'i18next';
 import { memo, PropsWithChildren, useDeferredValue, useMemo, useState } from 'react';
+import { get } from 'react-hook-form';
 import { useFeatureFlag, useLibraryMutation } from '@sd/client';
 import {
 	Button,
@@ -10,20 +12,22 @@ import {
 	Input,
 	Popover,
 	RadixCheckbox,
+	toast,
 	tw,
 	usePopover
 } from '@sd/ui';
-import { useIsDark, useKeybind, useLocale } from '~/hooks';
+import { useIsDark, useKeybind, useLocale, useShortcut } from '~/hooks';
 
-import { AppliedFilters, InteractiveSection } from './AppliedFilters';
+import { getQuickPreviewStore, useQuickPreviewStore } from '../Explorer/QuickPreview/store';
 import { useSearchContext } from './context';
-import { filterRegistry, SearchFilterCRUD, useToggleOptionSelected } from './Filters';
+import { AppliedFilters, InteractiveSection } from './Filters/components/AppliedFilters';
+import { filterRegistry, SearchFilterCRUD, useToggleOptionSelected } from './Filters/index';
 import {
-	getSearchStore,
-	useRegisterSearchFilterOptions,
-	useSearchRegisteredFilters,
-	useSearchStore
-} from './store';
+	useFilterOptionStore,
+	useRegisterFilterOptions,
+	useSearchRegisteredFilters
+} from './Filters/store';
+import { getSearchStore, useSearchStore } from './store';
 import { UseSearch } from './useSearch';
 import { RenderIcon } from './util';
 
@@ -78,7 +82,7 @@ export const SearchOptionSubMenu = (
 					<SearchOptionItemInternals {...props}>{props.name}</SearchOptionItemInternals>
 				</ContextMenuDivItem>
 			}
-			className={clsx(MENU_STYLES, 'explorer-scroll -mt-1.5 max-h-80', props.className)}
+			className={clsx(MENU_STYLES, 'default-scroll -mt-1.5 max-h-80', props.className)}
 		>
 			{props.children}
 		</DropdownMenu.SubMenu>
@@ -205,7 +209,7 @@ const SearchResults = memo(
 
 function AddFilterButton() {
 	const search = useSearchContext();
-	const searchState = useSearchStore();
+	const filterStore = useFilterOptionStore();
 
 	const [searchQuery, setSearch] = useState('');
 
@@ -233,7 +237,7 @@ function AddFilterButton() {
 					onKeyDown={(e) => e.stopPropagation()}
 					className={clsx(
 						MENU_STYLES,
-						'explorer-scroll max-h-[80vh] min-h-[100px] min-w-[200px] max-w-fit'
+						'default-scroll max-h-[80vh] min-h-[100px] min-w-[200px] max-w-fit'
 					)}
 					trigger={
 						<Button className="flex flex-row gap-1" size="xs" variant="dotted">
@@ -257,7 +261,7 @@ function AddFilterButton() {
 							<filter.Render
 								key={filter.name}
 								filter={filter as any}
-								options={searchState.filterOptions.get(filter.name)!}
+								options={filterStore.filterOptions.get(filter.name)!}
 								search={search}
 							/>
 						))
@@ -334,6 +338,7 @@ function SaveSearchButton() {
 
 function EscapeButton() {
 	const search = useSearchContext();
+	let { open: isQpOpen } = useQuickPreviewStore();
 
 	function escape() {
 		search.setSearch?.(undefined);
@@ -341,7 +346,16 @@ function EscapeButton() {
 		search.setSearchBarFocused(false);
 	}
 
-	useKeybind(['Escape'], escape);
+	useShortcut('explorerEscape', (e) => {
+		isQpOpen = getQuickPreviewStore().open;
+
+		e.preventDefault();
+		e.stopPropagation();
+		// Check the open state from the store
+		if (!isQpOpen) {
+			escape();
+		}
+	});
 
 	return (
 		<kbd
@@ -359,7 +373,7 @@ function RegisterSearchFilterOptions(props: {
 }) {
 	const options = props.filter.useOptions({ search: props.searchQuery });
 
-	useRegisterSearchFilterOptions(
+	useRegisterFilterOptions(
 		props.filter,
 		useMemo(
 			() => options.map((o) => ({ ...o, type: props.filter.name })),

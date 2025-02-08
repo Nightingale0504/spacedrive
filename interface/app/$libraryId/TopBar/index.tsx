@@ -138,7 +138,7 @@ function Tabs() {
 						else if (e.button === 1) removeTab(index);
 					}}
 					className={clsx(
-						'duration-[50ms] group relative flex h-full min-w-40 shrink-0 flex-row items-center justify-center px-8 text-center',
+						'group relative flex h-full min-w-40 shrink-0 flex-row items-center justify-center px-8 text-center duration-[50ms]',
 						ctx.tabIndex === index
 							? 'text-ink'
 							: 'top-bar-blur border-t border-sidebar-divider bg-sidebar/30 text-ink-faint/60 transition-colors hover:bg-app/50'
@@ -166,7 +166,7 @@ function Tabs() {
 				<Tooltip keybinds={[keybind.icon, 'T']} label={t('new_tab')}>
 					<button
 						onClick={addTab}
-						className="duration-[50ms] flex flex-row items-center justify-center rounded p-1.5 transition-colors hover:bg-app/80"
+						className="flex flex-row items-center justify-center rounded p-1.5 transition-colors duration-[50ms] hover:bg-app/80"
 					>
 						<Plus weight="bold" size={14} />
 					</button>
@@ -181,8 +181,13 @@ function useTabKeybinds(props: { addTab(): void; removeTab(index: number): void 
 
 	useShortcut('newTab', (e) => {
 		e.stopPropagation();
-		if (e.shiftKey) return; //to prevent colliding with 'navToSettings' shortcut
+		if (e.shiftKey) return; //to prevent colliding with other shortcuts
 		props.addTab();
+	});
+
+	useShortcut('duplicateTab', (e) => {
+		e.stopPropagation();
+		ctx.duplicateTab();
 	});
 
 	useShortcut('closeTab', (e) => {

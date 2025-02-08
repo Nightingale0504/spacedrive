@@ -1,4 +1,4 @@
-import { useCallback, type HTMLAttributes, type PropsWithChildren } from 'react';
+import { useCallback, useEffect, type HTMLAttributes, type PropsWithChildren } from 'react';
 import {
 	createSearchParams,
 	useNavigate,
@@ -192,14 +192,15 @@ export const useViewItemDoubleClick = () => {
 			}
 		},
 		[
-			searchParams,
 			explorer.selectedItems,
 			explorer.settingsStore.openOnDoubleClick,
-			library.uuid,
-			navigate,
 			openFilePaths,
-			openEphemeralFiles,
-			updateAccessTime
+			updateAccessTime,
+			library.uuid,
+			t,
+			searchParams,
+			navigate,
+			openEphemeralFiles
 		]
 	);
 
@@ -214,6 +215,17 @@ export const ViewItem = ({ data, children, ...props }: ViewItemProps) => {
 	const explorerView = useExplorerViewContext();
 
 	const { doubleClick } = useViewItemDoubleClick();
+
+	useEffect(() => {
+		const handleContextMenu = (e: MouseEvent) => {
+			e.preventDefault();
+		};
+
+		document.addEventListener('contextmenu', handleContextMenu);
+		return () => {
+			document.removeEventListener('contextmenu', handleContextMenu);
+		};
+	}, []);
 
 	return (
 		<ContextMenu.Root

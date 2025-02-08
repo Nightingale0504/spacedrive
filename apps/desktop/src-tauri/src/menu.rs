@@ -4,7 +4,7 @@ use serde::Deserialize;
 use specta::Type;
 use tauri::{
 	menu::{Menu, MenuItemKind},
-	AppHandle, Manager, Wry,
+	AppHandle, Emitter, Manager, Wry,
 };
 use tracing::error;
 
@@ -26,6 +26,11 @@ pub enum MenuEvent {
 	ToggleDeveloperTools,
 	NewWindow,
 	ReloadWebview,
+	Copy,
+	Cut,
+	Paste,
+	Duplicate,
+	SelectAll,
 }
 
 /// Menu items which require a library to be open to use.
@@ -73,11 +78,7 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 					.build(),
 			))
 			.separator()
-			.item(
-				&MenuItemBuilder::with_id(MenuEvent::NewLibrary, "New Library")
-					.accelerator("Cmd+Shift+T")
-					.build(app)?,
-			)
+			.item(&MenuItemBuilder::with_id(MenuEvent::NewLibrary, "New Library").build(app)?)
 			// .item(
 			// 	&SubmenuBuilder::new(app, "Libraries")
 			// 		// TODO: Implement this
@@ -92,31 +93,49 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 			.quit()
 			.build()?;
 
-		let file_menu = SubmenuBuilder::new(app, "File")
-			.item(
-				&MenuItemBuilder::with_id(MenuEvent::NewFile, "New File")
-					.accelerator("CmdOrCtrl+N")
-					.build(app)?,
-			)
-			.item(
-				&MenuItemBuilder::with_id(MenuEvent::NewDirectory, "New Directory")
-					.accelerator("CmdOrCtrl+D")
-					.build(app)?,
-			)
-			.item(
-				&MenuItemBuilder::with_id(MenuEvent::AddLocation, "Add Location")
-					// .accelerator("") // TODO
-					.build(app)?,
-			)
-			.build()?;
+		// TODO: Re-enable these when they are implemented, and doesn't stop duplicates.
+		// let file_menu = SubmenuBuilder::new(app, "File")
+		// 	.item(
+		// 		&MenuItemBuilder::with_id(MenuEvent::NewFile, "New File")
+		// 			.accelerator("CmdOrCtrl+N")
+		// 			.build(app)?,
+		// 	)
+		// 	.item(
+		// 		&MenuItemBuilder::with_id(MenuEvent::NewDirectory, "New Directory")
+		// 			.accelerator("CmdOrCtrl+D")
+		// 			.build(app)?,
+		// 	)
+		// 	.item(
+		// 		&MenuItemBuilder::with_id(MenuEvent::AddLocation, "Add Location")
+		// 			// .accelerator("") // TODO
+		// 			.build(app)?,
+		// 	)
+		// 	.build()?;
 
 		let edit_menu = SubmenuBuilder::new(app, "Edit")
-			.copy()
-			.cut()
-			.paste()
-			.redo()
-			.undo()
+			// .item(
+			// 	&MenuItemBuilder::with_id(MenuEvent::Copy, "Copy")
+			// 		.accelerator("CmdOrCtrl+C")
+			// 		.build(app)?,
+			// )
+			// .item(
+			// 	&MenuItemBuilder::with_id(MenuEvent::Cut, "Cut")
+			// 		.accelerator("CmdOrCtrl+X")
+			// 		.build(app)?,
+			// )
+			// .item(
+			// 	&MenuItemBuilder::with_id(MenuEvent::Paste, "Paste")
+			// 		.accelerator("CmdOrCtrl+V")
+			// 		.build(app)?,
+			// )
+			// .item(
+			// 	&MenuItemBuilder::with_id(MenuEvent::Duplicate, "Duplicate")
+			// 		.accelerator("CmdOrCtrl+D")
+			// 		.build(app)?,
+			// )
 			.select_all()
+			.undo()
+			.redo()
 			.build()?;
 
 		let view_menu = SubmenuBuilder::new(app, "View")
@@ -171,12 +190,13 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 
 		let window_menu = SubmenuBuilder::new(app, "Window")
 			.minimize()
-			.item(
-				&MenuItemBuilder::with_id(MenuEvent::NewWindow, "New Window")
-					.accelerator("CmdOrCtrl+Shift+N")
-					.build(app)?,
-			)
-			.close_window()
+			// Disabling this fixes the new "Duplicate current tab" shortcut on macOS clients
+			// ...and at the time I'm committing this we don't support multi-window so... ¯\_(ツ)_/¯
+			// .item(
+			// 	&MenuItemBuilder::with_id(MenuEvent::NewWindow, "New Window")
+			// 		.accelerator("CmdOrCtrl+Shift+N")
+			// 		.build(app)?,
+			// )
 			.fullscreen()
 			.item(
 				&MenuItemBuilder::with_id(MenuEvent::ReloadWebview, "Reload Webview")
@@ -187,7 +207,7 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 
 		let menu = MenuBuilder::new(app)
 			.item(&app_menu)
-			.item(&file_menu)
+			// .item(&file_menu)
 			.item(&edit_menu)
 			.item(&view_menu)
 			.item(&window_menu)
@@ -219,6 +239,11 @@ pub fn handle_menu_event(event: MenuEvent, app: &AppHandle) {
 		MenuEvent::SetLayoutGrid => webview.emit("keybind", "set_layout_grid").unwrap(),
 		MenuEvent::SetLayoutList => webview.emit("keybind", "set_layout_list").unwrap(),
 		MenuEvent::SetLayoutMedia => webview.emit("keybind", "set_layout_media").unwrap(),
+		MenuEvent::Copy => webview.emit("keybind", "copy").unwrap(),
+		MenuEvent::Cut => webview.emit("keybind", "cut").unwrap(),
+		MenuEvent::Paste => webview.emit("keybind", "paste").unwrap(),
+		MenuEvent::Duplicate => webview.emit("keybind", "duplicate").unwrap(),
+		MenuEvent::SelectAll => webview.emit("keybind", "select_all").unwrap(),
 		MenuEvent::ToggleDeveloperTools =>
 		{
 			#[cfg(feature = "devtools")]

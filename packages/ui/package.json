@@ -4,7 +4,7 @@
 	"license": "GPL-3.0-only",
 	"main": "src/index.ts",
 	"types": "src/index.ts",
-	"sideEffects": false,
+	"sideEffects": ["./style/index.js", "./style/style.scss"],
 	"exports": {
 		".": "./src/index.ts",
 		"./src/forms": "./src/forms/index.ts",
@@ -19,8 +19,9 @@
 		"typecheck": "tsc -b"
 	},
 	"dependencies": {
+		"@fontsource/ibm-plex-sans": "^5.1.0",
 		"@headlessui/react": "^1.7.17",
-		"@phosphor-icons/react": "^2.0.13",
+		"@phosphor-icons/react": "^2.1.0",
 		"@radix-ui/react-checkbox": "^1.0.4",
 		"@radix-ui/react-context-menu": "^2.1.5",
 		"@radix-ui/react-dialog": "^1.0.5",
@@ -44,7 +45,7 @@
 		"react-router-dom": "=6.20.1",
 		"sonner": "^1.0.3",
 		"use-debounce": "^9.0.4",
-		"zod": "~3.22.4"
+		"zod": "^3.23"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.24.0",
@@ -62,6 +63,6 @@
 		"tailwindcss": "^3.4.1",
 		"tailwindcss-animate": "^1.0.7",
 		"tailwindcss-radix": "^2.8.0",
-		"typescript": "^5.4.2"
+		"typescript": "^5.6.2"
 	}
 }

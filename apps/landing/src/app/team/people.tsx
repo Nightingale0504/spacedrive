@@ -13,12 +13,6 @@ export const teamMembers: Array<TeamMemberProps> = [
 		}
 	},
 	{
-		name: 'Valerie Wong',
-		location: 'Vancouver, Canada',
-		role: 'Director of Operations',
-		imageUrl: '/images/team/valerie.jpeg'
-	},
-	{
 		name: 'Ericson Soares',
 		location: 'Rio de Janeiro, Brazil',
 		role: 'Head of Engineering - Rust',
@@ -28,15 +22,15 @@ export const teamMembers: Array<TeamMemberProps> = [
 			github: 'https://github.com/fogodev'
 		}
 	},
-	{
-		name: 'Ameer Al Ashhab',
-		location: 'Amman, Jordan',
-		role: 'Product Manager & TypeScript Engineer - Interface Design',
-		imageUrl: '/images/team/ameer.jpg',
-		socials: {
-			github: 'https://github.com/ameer2468'
-		}
-	},
+	// {
+	// 	name: 'Ameer Al Ashhab',
+	// 	location: 'Amman, Jordan',
+	// 	role: 'Product Manager & TypeScript Engineer - Interface Design',
+	// 	imageUrl: '/images/team/ameer.jpg',
+	// 	socials: {
+	// 		github: 'https://github.com/ameer2468'
+	// 	}
+	// },
 	{
 		name: 'Matheus Consoli',
 		location: 'São Paulo, Brazil',
@@ -46,36 +40,36 @@ export const teamMembers: Array<TeamMemberProps> = [
 			github: 'https://github.com/matheus-consoli'
 		}
 	},
-	{
-		name: 'Vítor Vasconcellos',
-		location: 'Rio de Janeiro, Brazil',
-		role: 'Fullstack Devops Engineer',
-		imageUrl: '/images/team/vitor.jpg',
-		socials: {
-			github: 'https://github.com/HeavenVolkoff',
-			gitlab: 'https://gitlab.com/VitorVasconcellos',
-			twitter: 'https://x.com/vasvas10'
-		}
-	},
-	{
-		name: 'Mihail Dounaev',
-		location: 'Finland',
-		role: 'Graphic Designer - Icons & Animations',
-		imageUrl: '/images/team/mihail.jpg',
-		socials: {
-			twitter: 'https://x.com/mmmintdesign',
-			dribbble: 'https://dribbble.com/mmmint'
-		}
-	},
-	{
-		name: 'Matthew Yung',
-		location: 'Vancouver, Canada',
-		role: 'TypeScript Engineer - Intern',
-		imageUrl: '/images/team/matthew.jpg',
-		socials: {
-			website: 'https://myung03.github.io'
-		}
-	},
+	// {
+	// 	name: 'Vítor Vasconcellos',
+	// 	location: 'Rio de Janeiro, Brazil',
+	// 	role: 'Fullstack Devops Engineer',
+	// 	imageUrl: '/images/team/vitor.jpg',
+	// 	socials: {
+	// 		github: 'https://github.com/HeavenVolkoff',
+	// 		gitlab: 'https://gitlab.com/VitorVasconcellos',
+	// 		twitter: 'https://x.com/vasvas10'
+	// 	}
+	// },
+	// {
+	// 	name: 'Mihail Dounaev',
+	// 	location: 'Finland',
+	// 	role: 'Graphic Designer - Icons & Animations',
+	// 	imageUrl: '/images/team/mihail.jpg',
+	// 	socials: {
+	// 		twitter: 'https://x.com/mmmintdesign',
+	// 		dribbble: 'https://dribbble.com/mmmint'
+	// 	}
+	// },
+	// {
+	// 	name: 'Matthew Yung',
+	// 	location: 'Vancouver, Canada',
+	// 	role: 'TypeScript Engineer - Intern',
+	// 	imageUrl: '/images/team/matthew.jpg',
+	// 	socials: {
+	// 		website: 'https://myung03.github.io'
+	// 	}
+	// },
 	{
 		name: 'Arnab Chakraborty',
 		location: 'New York, United States',
@@ -163,7 +157,7 @@ export const investors: Array<TeamMemberProps> = [
 	},
 	{
 		name: 'Peer Richelsen',
-		role: 'CEO, Cal.com',
+		role: 'Co-Founder, Cal.com',
 		investmentRound: 'Seed',
 		imageUrl: '/images/investors/peer.jpg'
 	},

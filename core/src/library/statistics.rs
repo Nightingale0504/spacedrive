@@ -1,10 +1,10 @@
-use crate::{api::utils::get_size, invalidate_query, library::Library, volume::get_volumes, Node};
+use crate::{api::utils::get_size, invalidate_query, library::Library, Node};
 
-use sd_prisma::prisma::{statistics, storage_statistics};
+use sd_prisma::prisma::{statistics, volume};
 use sd_utils::db::size_in_bytes_from_db;
 
 use chrono::Utc;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use super::LibraryManagerError;
 
@@ -14,27 +14,38 @@ pub async fn update_library_statistics(
 ) -> Result<statistics::Data, LibraryManagerError> {
 	let (mut total_capacity, mut available_capacity) = library
 		.db
-		.storage_statistics()
+		.volume()
 		.find_many(vec![])
-		.select(storage_statistics::select!({ total_capacity available_capacity }))
+		.select(volume::select!({ total_bytes_capacity total_bytes_available }))
 		.exec()
 		.await?
 		.into_iter()
-		.fold((0, 0), |(mut total, mut available), stat| {
-			total += stat.total_capacity as u64;
-			available += stat.available_capacity as u64;
+		.fold((0, 0), |(mut total, mut available), vol| {
+			total += vol
+				.total_bytes_capacity
+				.map(|c| c.parse::<u64>().unwrap_or(0))
+				.unwrap_or(0);
+			available += vol
+				.total_bytes_available
+				.map(|a| a.parse::<u64>().unwrap_or(0))
+				.unwrap_or(0);
 			(total, available)
 		});
+	debug!(
+		?total_capacity,
+		?available_capacity,
+		"Fetched volume statistics;"
+	);
 
 	if total_capacity == 0 && available_capacity == 0 {
-		// Failed to fetch storage statistics from database, so we compute from local volumes
-		let volumes = get_volumes().await;
+		// Failed to fetch volume statistics from database, so we compute from local volumes
+		let volumes = crate::volume::get_volumes().await?;
 
 		let mut local_total_capacity: u64 = 0;
 		let mut local_available_capacity: u64 = 0;
 		for volume in volumes {
-			local_total_capacity += volume.total_capacity;
-			local_available_capacity += volume.available_capacity;
+			local_total_capacity += volume.total_bytes_capacity;
+			local_available_capacity += volume.total_bytes_available;
 		}
 
 		total_capacity = local_total_capacity;
@@ -47,7 +58,7 @@ pub async fn update_library_statistics(
 		node.config
 			.data_directory()
 			.join("libraries")
-			.join(&format!("{}.db", library.id)),
+			.join(format!("{}.db", library.id)),
 	)
 	.await
 	.unwrap_or(0);
@@ -92,7 +103,6 @@ pub async fn update_library_statistics(
 		.db
 		.statistics()
 		.upsert(
-			// Each library is a database so only one of these ever exists
 			statistics::id::equals(1),
 			statistics::create(params.clone()),
 			params,

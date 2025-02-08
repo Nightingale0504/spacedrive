@@ -1,10 +1,10 @@
 import { allPosts } from '@contentlayer/generated';
 import dayjs from 'dayjs';
 import { Metadata } from 'next';
-import { useMDXComponent } from 'next-contentlayer/hooks';
+import { useMDXComponent } from 'next-contentlayer2/hooks';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { BlogTag } from '~/components/BlogTag';
+import { BlogTag } from '~/components/blog-tag';
 import { BlogMDXComponents } from '~/components/mdx';
 
 export function generateStaticParams(): Array<Props['params']> {
@@ -43,18 +43,18 @@ export default function Page({ params }: Props) {
 	const MDXContent = useMDXComponent(post.body.code);
 
 	return (
-		<div className="lg:prose-xs container prose m-auto mb-20 max-w-4xl p-5 pt-14 dark:prose-invert">
+		<div className="lg:prose-xs container prose prose-invert m-auto mb-20 max-w-4xl p-5 pt-14">
 			<>
 				<figure>
 					<Image
 						src={post.image}
 						alt={post.imageAlt ?? ''}
-						className=" mt-8 rounded-xl will-change-transform fade-in"
+						className="mt-8 rounded-xl will-change-transform fade-in"
 						height={400}
 						width={900}
 					/>
 				</figure>
-				<section className="flex flex-wrap gap-4 rounded-xl px-4 ">
+				<section className="flex flex-wrap gap-4 rounded-xl px-4">
 					<div className="w-full grow">
 						<h1 className="animation-delay-1 m-0 text-2xl leading-snug will-change-transform fade-in sm:text-4xl sm:leading-normal">
 							{post.title}
